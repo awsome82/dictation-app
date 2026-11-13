@@ -122,6 +122,7 @@ function ready(level) {
   };
   show(el('div', { class: 'center' },
     el('h2', {}, level.name + ' 받아쓰기'),
+    level.unit ? el('div', { class: 'note' }, level.unit) : null,
     el('div', { class: 'num' }, '문제를 ' + CFG.reads + '번씩 읽어 줄게요. 잘 듣고 칸에 한 글자씩 써요.'),
     el('button', { class: 'primary big', onclick: () => { renderItem(); readItem(true); } }, '시작'),   // 이 누름으로 소리 재생이 허용됨
     el('button', { class: 'quit', onclick: home }, '급수 다시 고르기')
@@ -231,13 +232,17 @@ async function recognize(strokes, size) {
 // 1) 빈칸을 뺀 글자끼리 정답과 맞춰 정렬해서 글자를 채점한다(띄어쓰기 때문에 칸이 밀려도 영향 없음).
 // 2) 이웃한 두 글자 사이를 띄웠는지를 정답과 비교해서 띄어쓰기만 따로 판정한다.
 // info[k] = { has: 그 칸에 글씨가 있는지, cands: 인식 후보 }
+// 문장 부호는 모양이 비슷한 것끼리 같은 글자로 본다(둥근 따옴표와 곧은 따옴표 등).
+const MARKS = { '‘': "'", '’': "'", '`': "'", '′': "'", '“': '"', '”': '"', '″': '"', '。': '.', '．': '.', '·': '.', '，': ',', '、': ',', '！': '!', '？': '?' };
+const sameMark = s => MARKS[s] || s;
 function gradeOne(text, info) {
   const tl = []; let sp = false;
   for (const ch of Array.from(text.trim())) { if (ch === ' ') sp = true; else { tl.push({ ch, spaceBefore: sp }); sp = false; } }
   const wl = []; let blanks = 0;
   info.forEach((c, k) => { if (c.has) { wl.push({ k, cands: c.cands, blanksBefore: blanks }); blanks = 0; } else blanks++; });
   const n = wl.length, m = tl.length, GAP = 1;
-  const sub = (w, t) => { const r = w.cands.indexOf(t.ch); return r === 0 ? 0 : r > 0 ? 0.4 : 1.5; };
+  const rankOf = (w, t) => w.cands.map(sameMark).indexOf(sameMark(t.ch));
+  const sub = (w, t) => { const r = rankOf(w, t); return r === 0 ? 0 : r > 0 ? 0.4 : 1.5; };
   const D = Array.from({ length: n + 1 }, () => new Array(m + 1).fill(0));
   for (let i = 1; i <= n; i++) D[i][0] = i * GAP;
   for (let j = 1; j <= m; j++) D[0][j] = j * GAP;
@@ -253,7 +258,7 @@ function gradeOne(text, info) {
   pairs.reverse(); missing.reverse();
   let spaceErr = 0;
   pairs.forEach(([wi, tj], p) => {
-    const w = wl[wi], rank = w.cands.indexOf(tl[tj].ch);
+    const w = wl[wi], rank = rankOf(w, tl[tj]);
     const c = cells[w.k] = { target: tl[tj].ch, verdict: rank === 0 ? 'good' : rank > 0 ? 'warn' : 'bad', read: w.cands[0] || '' };
     const prev = pairs[p - 1];
     if (prev && prev[0] === wi - 1 && prev[1] === tj - 1) {          // 바로 앞 글자도 짝이 맞을 때만 그 사이를 본다
