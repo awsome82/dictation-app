@@ -18,7 +18,7 @@ const el = (tag, attrs = {}, ...kids) => {
   for (const k of kids.flat()) if (k != null) e.append(k);
   return e;
 };
-const show = (...nodes) => { app.innerHTML = ''; app.append(...nodes); window.scrollTo(0, 0); };
+const show = (...nodes) => { app.innerHTML = ''; app.append(...nodes.flat().filter(n => n != null)); window.scrollTo(0, 0); };   // 비워 둔 자리(null)는 건너뛴다
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
