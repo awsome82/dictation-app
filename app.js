@@ -84,15 +84,33 @@ function setSpeaking(on) {
 // ---------- 화면: 급수 선택 ----------
 function home() {
   stopSpeak(); state = null; sheet = null;
-  const levels = getLevels(), many = store.profiles.length > 1;
+  const levels = getLevels(), many = store.profiles.length > 1, d = new Date();
+  const dateLine = (d.getMonth() + 1) + '월 ' + d.getDate() + '일 ' + '일월화수목금토'[d.getDay()] + '요일';
+  const grid = el('div', { class: 'levels' }, levels.map(lv =>
+    el('button', { 'data-level': lv.id, onclick: () => ready(lv) }, el('span', { class: 'lv-name' }, lv.name), el('small', {}, Math.min(CFG.perTest, lv.items.length) + '문제'))));
   show(
-    el('div', { class: 'top' }, el('h1', {}, '받아쓰기'), el('button', { class: 'quit', onclick: () => pinGate(parentMenu, home) }, '부모님')),
-    many ? el('div', { class: 'chips' }, store.profiles.map(p => el('button', { class: p.id === curProfile().id ? 'on' : '', onclick: () => { store.currentProfile = p.id; saveStore(); home(); } }, p.name))) : null,
-    el('p', { class: 'lead' }, (many ? curProfile().name + ', ' : '') + '급수를 골라 주세요.'),
+    el('div', { class: 'top' },
+      el('div', {}, el('div', { class: 'date' }, dateLine), el('h1', {}, '받아쓰기 시간')),
+      el('div', { class: 'top-right' },
+        many ? el('div', { class: 'chips' }, store.profiles.map(p => el('button', { class: p.id === curProfile().id ? 'on' : '', onclick: () => { store.currentProfile = p.id; saveStore(); home(); } }, p.name))) : null,
+        el('button', { class: 'quit', onclick: () => pinGate(parentMenu, home) }, '부모님'))),
+    el('p', { class: 'lead' }, (many ? curProfile().name + ', ' : '') + '몇 급을 써 볼까요? 동그라미를 눌러요.'),
     levels.length ? null : el('p', { class: 'note' }, '급수표가 비어 있습니다. 부모님 메뉴에서 급수를 추가해 주세요.'),
-    el('div', { class: 'levels' }, levels.map(lv =>
-      el('button', { onclick: () => ready(lv) }, lv.name, el('small', {}, Math.min(CFG.perTest, lv.items.length) + '문제'))))
+    grid,
+    store.videos.some(v => !v.blocked) ? el('p', { class: 'promise' }, CFG.perTest + '문제를 다 맞히면 뮤직비디오 한 편!') : null
   );
+  decorateLevels(grid);
+}
+// 지금 고른 아이의 기록을 보고, 통과한 급수에는 도장을, 아직 통과 못 한 급수에는 지난 점수를 붙인다.
+async function decorateLevels(grid) {
+  const name = curProfile().name;
+  const mine = (await allAttempts()).filter(a => a.profile === name && a.score != null).sort((a, b) => a.id - b.id);
+  for (const btn of grid.children) {
+    const tries = mine.filter(a => a.levelId === btn.dataset.level);
+    if (!tries.length) continue;
+    if (tries.some(a => a.status === 'passed')) btn.append(el('span', { class: 'stamp' }, '참', el('br'), '잘했어요'));
+    else btn.querySelector('small').textContent = '지난번 ' + tries.at(-1).score + '개';
+  }
 }
 
 // ---------- 화면: 준비 ----------
@@ -114,7 +132,8 @@ function ready(level) {
 function renderItem() {
   const n = state.items.length, i = state.idx, item = state.items[i];
   state.replaysLeft = store.settings.replays;
-  const size = Math.floor(Math.min(CFG.maxCell, (app.clientWidth - 56) / CFG.cols));
+  const pad = parseFloat(getComputedStyle(app).paddingLeft) * 2 + 32 + 4;      // 칠판 안쪽 여백 + 공책 종이 여백 + 테두리
+  const size = Math.floor(Math.min(CFG.maxCell, (app.clientWidth - pad) / CFG.cols - 2));
   const rows = Math.max(2, Math.ceil((Array.from(item.text).length + 2) / CFG.cols));
   const grid = el('div', { class: 'sheet', style: 'grid-template-columns:repeat(' + CFG.cols + ',' + (size + 2) + 'px)' });
   sheet = { cells: [], history: [], size, erasing: false, grid };
@@ -127,13 +146,13 @@ function renderItem() {
   const eraser = el('button', { id: 'eraser', onclick: () => { sheet.erasing = !sheet.erasing; eraser.className = sheet.erasing ? 'on' : ''; grid.classList.toggle('erasing', sheet.erasing); } }, '지우개');
   show(
     el('div', { class: 'top' },
-      el('h2', {}, item.no + '번' + (state.round > 1 ? ' 다시 쓰기' : '')),
+      el('h2', {}, item.no + '번 문제' + (state.round > 1 ? ' 다시 쓰기' : '')),
       el('div', { class: 'dots' }, state.items.map((_, k) => el('i', { class: k < i ? 'done' : k === i ? 'now' : '' }))),
       el('button', { class: 'quit', onclick: () => { if (confirm('그만할까요? 지금까지 쓴 것은 지워져요.')) home(); } }, '그만하기')),
     el('div', { class: 'listen' },
       el('button', { id: 'again', onclick: () => { if (state.replaysLeft > 0) { state.replaysLeft--; document.getElementById('again').textContent = againLabel(); readItem(false); } } }, againLabel()),
       el('span', { id: 'hint', class: 'hint' }, '들은 대로 써 보세요.')),
-    grid,
+    el('div', { class: 'paper' }, grid),
     el('div', { class: 'tools' },
       el('div', { class: 'left' },
         el('button', { onclick: undo }, '되돌리기'), eraser,
@@ -273,7 +292,7 @@ function answerCanvas(a, T, marked) {
   a.cells.slice(0, nrow * cols).forEach((s, k) => {
     const x = (k % cols) * T, y = Math.floor(k / cols) * T, mark = marked && a.ai && a.ai.cells[k];
     if (mark && mark.verdict !== 'good') { ctx.fillStyle = mark.verdict === 'bad' ? '#fbd5cf' : '#fff0b8'; ctx.fillRect(x, y, T, T); }
-    ctx.strokeStyle = '#e3b9b1'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, T - 1, T - 1);
+    ctx.strokeStyle = '#a9c3ea'; ctx.lineWidth = 1; ctx.strokeRect(x + 0.5, y + 0.5, T - 1, T - 1);
     if (mark && mark.spaceNote) { ctx.fillStyle = '#e8710a'; ctx.fillRect(x, y, 5, T); }      // 띄어쓰기 오류: 칸 왼쪽에 주황 띠
     ctx.save(); ctx.translate(x, y); drawStrokes(ctx, s, a.size, T / a.size); ctx.restore();
   });
