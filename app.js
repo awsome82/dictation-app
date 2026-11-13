@@ -84,10 +84,13 @@ function setSpeaking(on) {
 // ---------- 화면: 급수 선택 ----------
 function home() {
   stopSpeak(); state = null; sheet = null;
+  const levels = getLevels(), many = store.profiles.length > 1;
   show(
-    el('h1', {}, '받아쓰기'),
-    el('p', { class: 'lead' }, '급수를 골라 주세요.'),
-    el('div', { class: 'levels' }, window.LEVELS.map(lv =>
+    el('div', { class: 'top' }, el('h1', {}, '받아쓰기'), el('button', { class: 'quit', onclick: () => pinGate(parentMenu, home) }, '부모님')),
+    many ? el('div', { class: 'chips' }, store.profiles.map(p => el('button', { class: p.id === curProfile().id ? 'on' : '', onclick: () => { store.currentProfile = p.id; saveStore(); home(); } }, p.name))) : null,
+    el('p', { class: 'lead' }, (many ? curProfile().name + ', ' : '') + '급수를 골라 주세요.'),
+    levels.length ? null : el('p', { class: 'note' }, '급수표가 비어 있습니다. 부모님 메뉴에서 급수를 추가해 주세요.'),
+    el('div', { class: 'levels' }, levels.map(lv =>
       el('button', { onclick: () => ready(lv) }, lv.name, el('small', {}, Math.min(CFG.perTest, lv.items.length) + '문제'))))
   );
 }
@@ -96,8 +99,8 @@ function home() {
 function ready(level) {
   const all = shuffle(level.items).slice(0, CFG.perTest).map((it, i) => ({ ...it, no: i + 1 }));
   state = {
-    level, all, items: all, idx: 0, answers: [], replaysLeft: CFG.replays, round: 1, correct: new Set(),
-    attempt: { id: Date.now(), when: new Date().toISOString(), levelId: level.id, levelName: level.name, status: 'writing', rounds: [] }
+    level, all, items: all, idx: 0, answers: [], replaysLeft: store.settings.replays, round: 1, correct: new Set(),
+    attempt: { id: Date.now(), when: new Date().toISOString(), profile: curProfile().name, levelId: level.id, levelName: level.name, status: 'writing', rounds: [] }
   };
   show(el('div', { class: 'center' },
     el('h2', {}, level.name + ' 받아쓰기'),
@@ -110,7 +113,7 @@ function ready(level) {
 // ---------- 화면: 듣고 쓰기 ----------
 function renderItem() {
   const n = state.items.length, i = state.idx, item = state.items[i];
-  state.replaysLeft = CFG.replays;
+  state.replaysLeft = store.settings.replays;
   const size = Math.floor(Math.min(CFG.maxCell, (app.clientWidth - 56) / CFG.cols));
   const rows = Math.max(2, Math.ceil((Array.from(item.text).length + 2) / CFG.cols));
   const grid = el('div', { class: 'sheet', style: 'grid-template-columns:repeat(' + CFG.cols + ',' + (size + 2) + 'px)' });
@@ -297,9 +300,10 @@ function callParent() {
 }
 
 // ---------- 화면: PIN ----------
-function pinGate(onOk, onCancel) {
+// reset = true 이면 번호를 새로 정한다(부모님 메뉴 안에서만 부른다).
+function pinGate(onOk, onCancel, reset = false) {
   let saved = null; try { saved = localStorage.getItem(PIN_KEY); } catch {}
-  let mode = saved ? 'enter' : 'set1', first = '', typed = '';
+  let mode = saved && !reset ? 'enter' : 'set1', first = '', typed = '';
   const title = el('h2', {}), msg = el('div', { class: 'num' }), dots = el('div', { class: 'pin-dots' });
   const paint = () => {
     title.textContent = mode === 'enter' ? '부모님 번호를 눌러 주세요' : mode === 'set1' ? '부모님 번호 4자리를 정해 주세요' : '같은 번호를 한 번 더 눌러 주세요';
@@ -372,11 +376,7 @@ async function applyGrades() {
 function result() {
   const total = state.all.length, answers = state.answers, right = answers.filter(a => a.parent).length;
   if (state.correct.size === total) {
-    return show(el('div', { class: 'center' },
-      el('h1', {}, '모두 맞혔어요!'),
-      el('div', { class: 'num' }, state.round === 1 ? total + '문제를 한 번에 다 맞혔어요. 참 잘했어요.' : '다시 써서 ' + total + '문제를 모두 맞혔어요. 참 잘했어요.'),
-      el('p', { class: 'note' }, '보상 영상은 다음 단계에서 추가됩니다.'),
-      el('button', { class: 'primary', onclick: home }, '처음으로')));
+    return rewardScreen('모두 맞혔어요!', state.round === 1 ? total + '문제를 한 번에 다 맞혔어요. 참 잘했어요.' : '다시 써서 ' + total + '문제를 모두 맞혔어요. 참 잘했어요.');
   }
   const wrong = answers.filter(a => !a.parent);
   show(
@@ -397,4 +397,4 @@ function retry() {
 
 document.addEventListener('touchmove', e => { if (e.target.tagName === 'CANVAS') e.preventDefault(); }, { passive: false });
 document.addEventListener('gesturestart', e => e.preventDefault());
-home();
+// 첫 화면(home)은 모든 스크립트가 불린 뒤 index.html에서 연다.
