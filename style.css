@@ -52,3 +52,20 @@ button.on { background:var(--ink); border-color:var(--ink); color:#fff; }
 .done-list .row b { font-size:18px; width:36px; flex:none; text-align:center; color:var(--quiet); }
 .done-list canvas { display:block; flex:none; }
 .note { font-size:15px; color:var(--quiet); }
+
+/* 2단계: PIN, 부모 채점 확인, 결과 */
+.pin-dots { display:flex; gap:14px; }
+.pin-dots i { width:20px; height:20px; border-radius:50%; border:2px solid var(--line); background:var(--paper); }
+.pin-dots i.on { background:var(--ink); border-color:var(--ink); }
+.keypad { display:grid; grid-template-columns:repeat(3, 84px); gap:12px; }
+.keypad button { height:72px; font-size:28px; padding:0; }
+.keypad button.small { font-size:16px; font-weight:400; }
+.row.review { align-items:flex-start; }
+.row.review .body { flex:1; min-width:0; overflow-x:auto; }
+.ans-text { font-size:24px; font-weight:700; letter-spacing:2px; margin-bottom:6px; }
+.ai { font-size:15px; margin-top:6px; color:var(--quiet); }
+.ai.good { color:var(--good); } .ai.warn { color:#9a6200; } .ai.bad { color:#c5221f; }
+.ox { display:flex; gap:8px; flex:none; }
+.ox button { width:60px; height:60px; padding:0; font-size:26px; }
+.ox button.on.good { background:var(--good); border-color:var(--good); color:#fff; }
+.ox button.on.bad { background:#c5221f; border-color:#c5221f; color:#fff; }
