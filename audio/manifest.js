@@ -1,0 +1,41 @@
+window.AUDIO = {
+ "voice": "fish-audio:ken_korean",
+ "nums": [
+  "audio/ken-num-01.mp3",
+  "audio/ken-num-02.mp3",
+  "audio/ken-num-03.mp3",
+  "audio/ken-num-04.mp3",
+  "audio/ken-num-05.mp3",
+  "audio/ken-num-06.mp3",
+  "audio/ken-num-07.mp3",
+  "audio/ken-num-08.mp3",
+  "audio/ken-num-09.mp3",
+  "audio/ken-num-10.mp3"
+ ],
+ "items": {
+  "나비가 날아요.": "audio/ken-0897a16f71fc.mp3",
+  "우리 집 강아지": "audio/ken-fb4ccdbf93b1.mp3",
+  "학교에 가요.": "audio/ken-a18f47ef0636.mp3",
+  "하늘이 맑아요.": "audio/ken-8e4d0ab226a3.mp3",
+  "친구와 놀아요.": "audio/ken-27e06fc45748.mp3",
+  "물을 마셔요.": "audio/ken-2f3649203257.mp3",
+  "꽃이 피었어요.": "audio/ken-e83a94c8102a.mp3",
+  "책을 읽어요.": "audio/ken-4cdfe0c878ea.mp3",
+  "손을 씻어요.": "audio/ken-b93d7d0415b3.mp3",
+  "밥을 먹어요.": "audio/ken-e528bb0c6390.mp3",
+  "노래를 불러요.": "audio/ken-bc28f267ba0c.mp3",
+  "바람이 불어요.": "audio/ken-f0dc9a99d65a.mp3",
+  "같이 놀자.": "audio/ken-c2a1c495f1e3.mp3",
+  "밖에 비가 와요.": "audio/ken-3439a228beef.mp3",
+  "앉아서 기다려요.": "audio/ken-43de33087a35.mp3",
+  "닭이 울어요.": "audio/ken-a625c864d3cc.mp3",
+  "책이 많아요.": "audio/ken-d09cd66ed486.mp3",
+  "값이 비싸요.": "audio/ken-eec63b235917.mp3",
+  "흙을 밟았어요.": "audio/ken-63b0be324176.mp3",
+  "굳이 가야 해요?": "audio/ken-161b37079743.mp3",
+  "꽃잎이 떨어져요.": "audio/ken-66b84f4d54b6.mp3",
+  "옷을 입었어요.": "audio/ken-5c0262308d6c.mp3",
+  "맛있게 먹었어요.": "audio/ken-857b6ebfad71.mp3",
+  "깨끗이 닦아요.": "audio/ken-94124885b9d1.mp3"
+ }
+};
